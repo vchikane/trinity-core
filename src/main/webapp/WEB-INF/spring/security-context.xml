@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bean:beans xmlns:bean="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:c="http://www.springframework.org/schema/c"
+	xmlns="http://www.springframework.org/schema/security" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/security
+		http://www.springframework.org/schema/security/spring-security-3.2.xsd">
+	
+	<global-method-security secured-annotations="enabled"
+		pre-post-annotations="enabled" jsr250-annotations="enabled" />
+
+	
+	<!-- DAO package is specified because security is using XML based beans, 
+		if it was using all annotations based beans DAO package wont be required. -->
+	<context:component-scan
+		base-package="org.zigmoi.trinity.core.dao org.zigmoi.trinity.usermanagement.dao" />
+		
+
+	<http realm="Protected API" use-expressions="true" create-session="stateless"
+		entry-point-ref="unauthorizedEntryPoint" authentication-manager-ref="restAuthenticationManager">
+		<custom-filter ref="restAuthenticationFilter" position="FORM_LOGIN_FILTER" />
+		<intercept-url pattern="/*" access="permitAll" />
+		<intercept-url pattern="/secured/**" access="isFullyAuthenticated()" />
+	</http>
+
+	<bean:bean id="unauthorizedEntryPoint"
+		class="org.zigmoi.trinity.core.security.UnauthorizedEntryPoint" />
+
+	<bean:bean id="userDetailService"
+		class="org.zigmoi.trinity.core.security.MyUserDetailsService" />
+
+	<authentication-manager id="restAuthenticationManager">
+		<authentication-provider user-service-ref="userDetailService">
+				 <password-encoder ref="encoder" /><!-- for password hashing -->
+		</authentication-provider>
+	</authentication-manager>
+	
+	<bean:bean id="encoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder">
+		<bean:constructor-arg name="strength" value="11" />
+  	</bean:bean>
+
+	<bean:bean id="tokenManager" class="org.zigmoi.trinity.core.security.TokenManagerSingle" />
+
+	<bean:bean id="authenticationService"
+		class="org.zigmoi.trinity.core.security.AuthenticationServiceDefault"
+		c:authenticationManager-ref="restAuthenticationManager"
+		c:tokenManager-ref="tokenManager" />
+
+	<bean:bean id="restAuthenticationFilter"
+		class="org.zigmoi.trinity.core.security.TokenAuthenticationFilter"
+		c:authenticationService-ref="authenticationService" c:logoutLink="/logout" />
+		
+</bean:beans>
