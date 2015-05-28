@@ -1,6 +1,7 @@
 # trinity-core
 REST based modular setup using Spring MVC, Hibernate &amp; Angular JS.
 The setup has following 2 divisions:
+
 1) trinity-core
 2) trinity-ui
 
